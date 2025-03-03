@@ -1,4 +1,4 @@
-pd
+pandas
 bokeh
 numpy
 geopandas
