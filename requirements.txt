@@ -1,4 +1,4 @@
 pandas
 bokeh
 numpy
-geopandas
+geopandas==0.14.4
