@@ -10,6 +10,7 @@ from bokeh.plotting import figure, show
 from bokeh.layouts import column, gridplot
 from bokeh.models.ranges import FactorRange
 from bokeh.transform import factor_cmap,dodge
+from bokeh.colors import RGB
 
 from datetime import timedelta
 
@@ -307,7 +308,7 @@ def question2_1():
     fig.line(x=dates_list, y=np.cumsum(flat_daily_values_premium),
             color='gray', line_width=2,legend_label="Premium Sales")
     fig.line(x=dates_list, y=np.cumsum(flat_daily_values_unlock),
-            color='red', line_width=2,legend_label="Unlock Sales")
+            color='#E6E6FA', line_width=2,legend_label="Unlock Sales")
 
     #We add a legend
     fig.legend.title = "Sales Type"
@@ -410,11 +411,12 @@ def question2_2():
     # Add bars for Unlock Sales
     fig2.vbar(x=dodge('days', dodge_dist, range=fig2.x_range), 
             top='unlock', width=bar_width, source=source, 
-            color="orange", legend_label="Unlock Sales")
+            color=RGB(12,12,12), legend_label="Unlock Sales")
 
     # Customize legend
     fig2.legend.title = "Sales Type"
     fig2.legend.location = "top_left"
     # Configure the gridplot
     gridplotje = gridplot([[fig1],[fig2]],toolbar_location=None)
-    return(gridplotje)
+    return [fig1, fig2]
+    # return(gridplotje)

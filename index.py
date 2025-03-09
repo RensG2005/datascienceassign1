@@ -12,10 +12,13 @@ from question12 import question1_1, question2_1, question2_2
 import builtins
 builtins.get_ipython = lambda: None
 
+fig1, fig2 = question2_2()
+
 plots = [
     question1_1(),
     question2_1(),
-    question2_2(),
+    fig1,
+    fig2,
     question3_plot1(),
     question3_plot2(),
     question4_plot1(),
@@ -23,12 +26,24 @@ plots = [
 ]
 
 title = Div(
-    text="<h1 style='text-align:center; color:#333;'>Complete Reference for Dungeons and Dragons 5 admin dashboard</h1>",
+    text="<h1 style='text-align:center; color:#333; margin:0; padding:0;'>Complete Reference for Dungeons and Dragons 5 admin dashboard</h1>",
     width=800, height=50
 )
 
+background_style = """
+    <style>
+        body {
+            background-color: red;  /* Light gray background */
+        },
+        .bk-root {
+            background-color: red; /* White background for the Bokeh layout */
+        }
+    </style>
+"""
 
-layout = [title, gridplot([plots[:2], plots[2:4], plots[4:6], plots[6:8]],
+style_div = Div(text=background_style, width=1, height=1)
+
+layout = [title, style_div, gridplot([plots[:3], plots[3:6], plots[6:9], plots[9:12]],
                       sizing_mode="fixed",  # "scale_width" for auto-sizing
     width=650, height=350,
     toolbar_location="above",

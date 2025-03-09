@@ -50,7 +50,7 @@ def question3_plot2():
        p.add_layout(LinearAxis(y_range_name="ratings", axis_label="Ratings"), 'right')
 
        p.circle(x='date', y='rating', source=ratings_source, legend_label="Mean Daily Ratings", 
-              size=8, color="green", alpha=0.7, y_range_name="ratings")
+              size=8, color="#E6E6FA", alpha=0.7, y_range_name="ratings")
 
        df_clean = sdf.dropna(subset=['daily average rating'])
 
@@ -60,7 +60,7 @@ def question3_plot2():
        print(f"Slope: {slope}, Intercept: {intercept}, P-value: {p_value}, Std Err: {std_err}")
 
        regression_line = slope * dates_numeric + intercept
-       p.line(df_clean['date'], regression_line, line_width=2, color="red", 
+       p.line(df_clean['date'], regression_line, line_width=2, color="#E6E6FA", 
               legend_label="Ratings Trend (Stats)", y_range_name="ratings")
 
        p.legend.location = "top_left"
@@ -138,10 +138,10 @@ def question3_plot1():
               legend_label="Crashes", line_width=2, color="blue")
 
        p.line(x='date', y='amount (merchant currency)', source=sales_source,
-              legend_label="Sales", line_width=2, color="red", y_range_name="Sales")
+              legend_label="Sales", line_width=2, color="blue", y_range_name="Sales")
 
        p.line(x='date', y='regression', source=regression_source,
-              legend_label="Sales Trend", line_width=2, color="purple", y_range_name="Sales")
+              legend_label="Sales Trend", line_width=2, color="#E6E6FA", y_range_name="Sales")
 
        p.xaxis.major_label_orientation = "vertical"
        p.legend.location = "top_left"

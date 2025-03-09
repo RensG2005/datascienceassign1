@@ -57,7 +57,7 @@ def question4_plot1():
 
     def bokeh_plot_map(gdf, column, title=''):
         geosource = get_geodatasource(gdf)
-        palette = brewer['OrRd'][9][::-1]
+        palette = brewer['Blues'][9][::-1]
         
         if column not in gdf.columns:
             raise ValueError(f"Column '{column}' not found in the GeoDataFrame")
@@ -122,7 +122,7 @@ def question4_plot2():
 
     def bokeh_plot_map(gdf, column, title=''):
         geosource = get_geodatasource(gdf)
-        palette = brewer['OrRd'][9][::-1]  # Use 9 steps for more granularity
+        palette = brewer['Blues'][9][::-1]
         
         if column not in gdf.columns:
             raise ValueError(f"Column '{column}' not found in the GeoDataFrame")
