@@ -43,7 +43,7 @@ def question3_plot2():
               width=750,
               toolbar_location=None)
 
-       p.line(x='date', y='daily crashes', source=crashsource, legend_label="Crashes", line_width=2, color="blue")
+       p.line(x='date', y='daily crashes', source=crashsource, legend_label="Crashes", line_width=2, color=RGB(173, 216, 230))
        p.xaxis.major_label_orientation = "vertical"
 
        p.extra_y_ranges = {"ratings": Range1d(start=.5, end=5.5)}
@@ -61,7 +61,7 @@ def question3_plot2():
 
        regression_line = slope * dates_numeric + intercept
        p.line(df_clean['date'], regression_line, line_width=2, color="orange", 
-              legend_label="Ratings Trend (Stats)", y_range_name="ratings")
+              legend_label="Ratings Trend", y_range_name="ratings")
 
        p.legend.location = "top_left"
        p.legend.click_policy = "hide"
@@ -114,6 +114,7 @@ def question3_plot1():
     salesdf['transaction date'] = pd.to_datetime(salesdf['transaction date'])
     sales_per_date = salesdf.groupby('transaction date')['amount (merchant currency)'].sum().reset_index()
     sales_per_date = sales_per_date.rename(columns={'transaction date': 'date'})
+    sales_per_date['sales_diff'] = sales_per_date['amount (merchant currency)'].diff()
     sales_source = ColumnDataSource(sales_per_date)
     
     # Create figure with dual y-axes
@@ -145,11 +146,11 @@ def question3_plot1():
         print(f"Using '{crash_column}' as crash column")
         
     p.line(x='date', y=crash_column, source=crashsource,
-          legend_label="Crashes", line_width=2, color="red")
+          legend_label="Crashes", line_width=2, color=RGB(173, 216, 230))
     
     # Plot sales line (using secondary y-axis)
     p.line(x='date', y='amount (merchant currency)', source=sales_source,
-          legend_label="Sales", line_width=2, color="blue", y_range_name="Sales")
+          legend_label="Sales", line_width=2, color=RGB(100, 50, 50), y_range_name="Sales")
     
     # Plot regression line
     p.line(x='date', y='regression', source=regression_source,
