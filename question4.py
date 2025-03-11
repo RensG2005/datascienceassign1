@@ -128,7 +128,6 @@ def question4_plot2():
             raise ValueError(f"Column '{column}' not found in the GeoDataFrame")
         
         vals = gdf[column]
-        print(f"Min value: {vals.min()}, Max value: {vals.max()}")
         
         low_val = 0.1 if vals.min() == 0 else vals.min()  # Avoid log(0), use 0.1 as base for zeros
         color_mapper = LinearColorMapper(palette=palette, low=low_val, high=vals.max())

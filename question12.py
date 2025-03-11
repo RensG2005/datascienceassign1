@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
-import geopandas
 import bokeh
 import json
-from bokeh.models import CustomJS, ColumnDataSource, Button, FactorRange, Tabs, TabPanel, HoverTool, CheckboxGroup, CDSView, GroupFilter
+from bokeh.models import CustomJS, ColumnDataSource, Button, FactorRange, Tabs, TabPanel
+from bokeh.models import HoverTool, CheckboxGroup, CDSView, GroupFilter,LassoSelectTool,WheelZoomTool
+from bokeh.models import DatetimeTickFormatter, Range1d
 from bokeh.palettes import Blues
 from bokeh.plotting import figure, show
 from bokeh.layouts import column, gridplot
 from bokeh.models.ranges import FactorRange
 from bokeh.transform import factor_cmap,dodge
-from bokeh.colors import RGB
 
 from datetime import timedelta
 
@@ -244,6 +244,15 @@ def question1_1():
     return(tabs)
 
 def question2_1():
+    """
+    No hover tool here since it makes things complicated and it doesn't really matter what the cumulative sales
+    specific values are, we only need to know the difference in increments from this plot
+    
+    we do have:
+    - zooming (but limited)
+    - moving around the plot (but limited)
+    - box selection to look at a specific month or range of months
+    """
     #importing the dataframe
     df = pd.read_csv("./sales_df.csv")
     df['transaction date'] = pd.to_datetime(df['transaction date'])#make this column a datetime column
@@ -298,21 +307,46 @@ def question2_1():
     flat_daily_values_unlock = [value for month in months for value in daily_values_unlock[month]] #will be our y-axis
     dates_list = [df['transaction date'][0] + timedelta(days=i) for i in range(len(flat_daily_values_premium))]#we can choose 1 of the 2
 
+
+    # Create a ColumnDataSource
+    source = ColumnDataSource(data={
+        'dates': dates_list,
+        'premium_cumsum': np.cumsum(flat_daily_values_premium),
+        'unlock_cumsum': np.cumsum(flat_daily_values_unlock)
+    })
+
     # Create a figure with a datetime type x-axis
     fig = figure(title='Cumulative sales volume of premium and character unlock',
                 height=400, width=700,
                 x_axis_label='Day Number', y_axis_label='Cumulative sales amount',
-                toolbar_location=None)
+                toolbar_location='right')
+    
+    fig.y_range = Range1d(start=0,end=max(sum(flat_daily_values_premium),sum(flat_daily_values_unlock)))
+
+
+    #Lock zooming and panning to inside
+    y_max = max(sum(flat_daily_values_premium), sum(flat_daily_values_unlock))
+    fig.x_range.bounds = (dates_list[0], dates_list[-1])  # Prevent moving beyond this range
+    fig.y_range.bounds = (0,y_max)  # Prevent moving beyond this range
+
 
     # The cumulative sum will be a trend line
     fig.line(x=dates_list, y=np.cumsum(flat_daily_values_premium),
-            color='gray', line_width=2,legend_label="Premium Sales")
+            color='blue', line_width=2,legend_label="Premium Sales")
     fig.line(x=dates_list, y=np.cumsum(flat_daily_values_unlock),
-            color='#E6E6FA', line_width=2,legend_label="Unlock Sales")
+            color='orange', line_width=2,legend_label="Unlock Sales")
+
+    # Format the x-axis labels
+    fig.xaxis.formatter = DatetimeTickFormatter(
+    days="%b %d",  # Example: "Jun 01"
+    months="%b %Y",  # Example: "Jun 2024"
+    years="%Y"  # Example: "2024"
+    )
 
     #We add a legend
     fig.legend.title = "Sales Type"
     fig.legend.location = "top_left"
+    # fig.add_tools(WheelZoomTool())
     return(fig)
 
 def question2_2():
@@ -370,17 +404,24 @@ def question2_2():
     # Create a Bokeh data source
     source = ColumnDataSource(data=dict(days=x_values, sales=y_values))
 
-    # Create a figure
-    fig1 = figure(title='Average Sales Volume per Weekday',
+    # Create a figure with a restricted toolbar (only download)
+    fig1 = figure(title='Average total sales volume per weekday',
                 height=400, width=700,
                 x_axis_label='Day of Week', y_axis_label='Sales Volume',
                 x_range=x_values,  # Ensure correct categorical axis
-                toolbar_location=None)
+                toolbar_location='right',
+                tools="save")  # Only enable the download button
 
     # Add bars to the figure
     fig1.vbar(x='days', top='sales', width=0.5, source=source, 
             fill_color=factor_cmap('days', palette="Blues7", factors=x_values))
-    
+    # Add hover tool
+    hover = HoverTool(
+        tooltips=[("Average Sales Volume", "@sales")],  # Show y-axis value
+        mode="vline"  # Shows tooltip when hovering over a vertical line
+    )
+    fig1.add_tools(hover)
+
     ##############PREMIUM+UNLOCK FIGURE################
     # Extract x-axis labels (weekdays)
     x_values = list(days_sales_volume_premium.keys())  # ["Mon", "Tue", "Wed", ...]
@@ -393,30 +434,54 @@ def question2_2():
     source = ColumnDataSource(data=dict(days=x_values, premium=premium_sales, unlock=unlock_sales))
 
     # Create figure
-    fig2 = figure(title='Average Sales Volume per Weekday (Premium vs Unlock)',
+    fig2 = figure(title='Average sales volume per weekday per category (click on legend to mute)',
                 height=400, width=700,
                 x_axis_label='Day of Week', y_axis_label='Sales Volume',
                 x_range=x_values,  # Ensures categorical axis
-                toolbar_location=None)
+                toolbar_location='right',
+                tools="save")
 
     # Bar width and dodge distance
-    bar_width = 0.4  # Adjust width for better spacing
-    dodge_dist = 0.2  # Moves one bar left and the other right
+    bar_width = 0.4  
+    dodge_dist = 0.2  
 
-    # Add bars for Premium Sales
-    fig2.vbar(x=dodge('days', -dodge_dist, range=fig2.x_range), 
-            top='premium', width=bar_width, source=source, 
-            color="royalblue", legend_label="Premium Sales")
+    # Add bars for Premium Sales (with mute functionality)
+    premium_bar = fig2.vbar(x=dodge('days', -dodge_dist, range=fig2.x_range), 
+                            top='premium', width=bar_width, source=source, 
+                            color="royalblue", legend_label="Premium Sales",
+                            muted_color="royalblue", muted_alpha=0.1)  # Mutes to almost invisible
 
-    # Add bars for Unlock Sales
-    fig2.vbar(x=dodge('days', dodge_dist, range=fig2.x_range), 
-            top='unlock', width=bar_width, source=source, 
-            color=RGB(12,12,12), legend_label="Unlock Sales")
+    # Add bars for Unlock Sales (with mute functionality)
+    unlock_bar = fig2.vbar(x=dodge('days', dodge_dist, range=fig2.x_range), 
+                            top='unlock', width=bar_width, source=source, 
+                            color="orange", legend_label="Unlock Sales",
+                            muted_color="orange", muted_alpha=0.1)  # Mutes to almost invisible
 
-    # Customize legend
+    # Customize legend for muting
     fig2.legend.title = "Sales Type"
     fig2.legend.location = "top_left"
+    fig2.legend.click_policy = "mute"  # Allows clicking to mute/unmute
+
+    # Add hover tool (ensuring hover works for both categories)
+    hover1 = HoverTool(
+        renderers=[premium_bar],  # Apply to Premium bars only
+        tooltips=[("Premium Sales", "@premium")],  
+        mode="vline"
+    )
+    hover2 = HoverTool(
+        renderers=[unlock_bar],  # Apply to Unlock bars only
+        tooltips=[("Unlock Sales", "@unlock")],  
+        mode="vline"
+    )
+    fig2.add_tools(hover1, hover2)
+
     # Configure the gridplot
-    gridplotje = gridplot([[fig1],[fig2]],toolbar_location=None)
-    return [fig1, fig2]
+    # gridplotje = gridplot([[fig1, fig2]],toolbar_location='right',merge_tools=True)
     # return(gridplotje)
+    return fig1, fig2
+
+# from bokeh.io import output_file
+
+# output_file("test2.html")
+
+# show(question2_2())
