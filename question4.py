@@ -181,14 +181,11 @@ def question4_plot3():
     country_sales["country_name"] = country_sales["country"].apply(get_country_name)
     country_ratings["country_name"] = country_ratings["country"].apply(get_country_name)
     
-    # Filter out countries with zero sales or no data
     country_sales = country_sales[country_sales["total_sales"] > 0]
     country_ratings = country_ratings[country_ratings["avg_rating"] > 0]
     
-    # Get ONLY top 5 for sales (no bottom sales)
     top_sales = country_sales.nlargest(5, "total_sales")
     
-    # Get ONLY bottom 5 for ratings (no top ratings)
     bottom_ratings = country_ratings.nsmallest(5, "avg_rating")
     
     # Add category and color information
@@ -196,7 +193,7 @@ def question4_plot3():
     top_sales['color'] = '#4682B4'  # Blue for top sales
     
     bottom_ratings['category'] = 'Bottom 5 Ratings'
-    bottom_ratings['color'] = '#F08080'  # Red for bottom ratings
+    bottom_ratings['color'] = '#FFA500'  # Red for bottom ratings
     
     # Create Bokeh data sources
     from bokeh.models import ColumnDataSource, NumeralTickFormatter, LabelSet, Legend, LegendItem, HoverTool
@@ -269,7 +266,6 @@ def question4_plot3():
     p_sales.yaxis.axis_label = "Total Sales"
     p_sales.title.text_font_size = '14pt'
     
-    # Create the ratings plot - showing only bottom ratings
     p_ratings = figure(
         width=850,
         height=500,
