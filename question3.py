@@ -30,6 +30,7 @@ def question3_plot2():
        sdf['date'] = pd.to_datetime(sdf['date'])
        reviewdf['date'] = pd.to_datetime(reviewdf['date'])
 
+
        crashsource = ColumnDataSource(cdf)
        statssource = ColumnDataSource(sdf)
        mean_ratings_per_day = reviewdf.groupby('date')['rating'].mean().reset_index()
@@ -117,7 +118,12 @@ def question3_plot1():
     sales_per_date['sales_diff'] = sales_per_date['amount (merchant currency)'].diff()
     sales_source = ColumnDataSource(sales_per_date)
     
-    # Create figure with dual y-axes
+    merged_df = pd.merge(cdf, sales_per_date, on='date', how='inner')
+
+    correlation = np.corrcoef(merged_df["daily crashes"], merged_df["amount (merchant currency)"])[0, 1]
+    print(f"Correlation between crashes and sales: {correlation:.4f}")
+
+
     p = figure(title="Daily Crashes and Sales Over Time",
               x_axis_label='Date',
               x_axis_type='datetime',
@@ -150,7 +156,7 @@ def question3_plot1():
     
     # Plot sales line (using secondary y-axis)
     p.line(x='date', y='amount (merchant currency)', source=sales_source,
-          legend_label="Sales", line_width=2, color=RGB(100, 50, 50), y_range_name="Sales")
+          legend_label="Sales", line_width=2, color=RGB(255, 200, 150), y_range_name="Sales")
     
     # Plot regression line
     p.line(x='date', y='regression', source=regression_source,
