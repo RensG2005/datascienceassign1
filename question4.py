@@ -12,7 +12,7 @@ import matplotlib as mpl
 import pylab as plt
 
 from bokeh.io import show, output_notebook
-from bokeh.models import ColumnDataSource, GeoJSONDataSource, LogColorMapper, LinearColorMapper, ColorBar, HoverTool
+from bokeh.models import ColumnDataSource, GeoJSONDataSource, LogColorMapper, LinearColorMapper, ColorBar, HoverTool, LabelSet
 from bokeh.palettes import brewer
 from bokeh.plotting import figure, show
 
@@ -155,4 +155,171 @@ def question4_plot2():
     output_notebook()  # If in a Jupyter notebook
     p = bokeh_plot_map(merged, column=key)
     return p
-
+def question4_plot3():
+    # Load the sales data
+    sales_csv = pd.read_csv("./sales_df.csv")
+    salesdf = pd.DataFrame(sales_csv)
+    
+    # Group by country and sum sales
+    country_sales = salesdf.groupby("buyer country")["amount (merchant currency)"].sum().reset_index()
+    country_sales.columns = ["country", "total_sales"]
+    
+    # Load the ratings data
+    rating_csv = pd.read_csv("./statscountrydf.csv")
+    rating_df = pd.DataFrame(rating_csv)
+    country_ratings = rating_df.groupby("country")["total average rating"].mean().reset_index()
+    country_ratings.columns = ["country", "avg_rating"]
+    
+    # Convert two-letter country codes to country names using pycountry
+    def get_country_name(iso2_code):
+        try:
+            country = pycountry.countries.get(alpha_2=iso2_code)
+            return country.name if country else iso2_code
+        except AttributeError:
+            return iso2_code
+    
+    country_sales["country_name"] = country_sales["country"].apply(get_country_name)
+    country_ratings["country_name"] = country_ratings["country"].apply(get_country_name)
+    
+    # Filter out countries with zero sales or no data
+    country_sales = country_sales[country_sales["total_sales"] > 0]
+    country_ratings = country_ratings[country_ratings["avg_rating"] > 0]
+    
+    # Get ONLY top 5 for sales (no bottom sales)
+    top_sales = country_sales.nlargest(5, "total_sales")
+    
+    # Get ONLY bottom 5 for ratings (no top ratings)
+    bottom_ratings = country_ratings.nsmallest(5, "avg_rating")
+    
+    # Add category and color information
+    top_sales['category'] = 'Top 5 Sales'
+    top_sales['color'] = '#4682B4'  # Blue for top sales
+    
+    bottom_ratings['category'] = 'Bottom 5 Ratings'
+    bottom_ratings['color'] = '#F08080'  # Red for bottom ratings
+    
+    # Create Bokeh data sources
+    from bokeh.models import ColumnDataSource, NumeralTickFormatter, LabelSet, Legend, LegendItem, HoverTool
+    from bokeh.plotting import figure
+    from bokeh.layouts import row
+    
+    # Create ColumnDataSource for sales
+    sales_source = ColumnDataSource(data=dict(
+        countries=list(top_sales['country_name']),
+        sales=top_sales['total_sales'],
+        category=top_sales['category'],
+        color=top_sales['color']
+    ))
+    
+    # Create ColumnDataSource for ratings
+    ratings_source = ColumnDataSource(data=dict(
+        countries=list(bottom_ratings['country_name']),
+        ratings=bottom_ratings['avg_rating'],
+        category=bottom_ratings['category'],
+        color=bottom_ratings['color']
+    ))
+    
+    # Create the sales plot - showing only top sales
+    p_sales = figure(
+        width=850,
+        height=500,
+        title="Top 5 Countries by Sales",
+        x_range=sales_source.data['countries'],
+        toolbar_location=None,
+        tools="hover"
+    )
+    
+    # Add hover tooltip
+    hover_sales = p_sales.select(dict(type=HoverTool))
+    hover_sales.tooltips = [
+        ("Country", "@countries"),
+        ("Sales", "@sales{0,0}")
+    ]
+    
+    # Add bars using the color from the source
+    bars_sales = p_sales.vbar(
+        x='countries',
+        top='sales',
+        width=0.7,
+        source=sales_source,
+        line_color=None,
+        fill_color='color'
+    )
+    
+    # Add value labels
+    labels_sales = LabelSet(
+        x='countries',
+        y='sales',
+        text='sales',
+        text_font_size='9pt',
+        text_color='black',
+        text_align='center',
+        text_baseline='bottom',
+        source=sales_source,
+        x_offset=0,
+        y_offset=5,
+    )
+    p_sales.add_layout(labels_sales)
+    
+    # Customize the sales plot
+    p_sales.xaxis.major_label_orientation = 45
+    p_sales.xgrid.grid_line_color = None
+    p_sales.y_range.start = 0
+    p_sales.yaxis.formatter = NumeralTickFormatter(format="0,0")
+    p_sales.yaxis.axis_label = "Total Sales"
+    p_sales.title.text_font_size = '14pt'
+    
+    # Create the ratings plot - showing only bottom ratings
+    p_ratings = figure(
+        width=850,
+        height=500,
+        title="Bottom 5 Countries by Average Rating",
+        x_range=ratings_source.data['countries'],
+        toolbar_location=None,
+        tools="hover"
+    )
+    
+    # Add hover tooltip
+    hover_ratings = p_ratings.select(dict(type=HoverTool))
+    hover_ratings.tooltips = [
+        ("Country", "@countries"),
+        ("Rating", "@ratings{0.00}")
+    ]
+    
+    # Add bars using the color from the source
+    bars_ratings = p_ratings.vbar(
+        x='countries',
+        top='ratings',
+        width=0.7,
+        source=ratings_source,
+        line_color=None,
+        fill_color='color'
+    )
+    
+    # Add value labels
+    labels_ratings = LabelSet(
+        x='countries',
+        y='ratings',
+        text='ratings',
+        text_font_size='9pt',
+        text_color='black',
+        text_align='center',
+        text_baseline='bottom',
+        source=ratings_source,
+        x_offset=0,
+        y_offset=5,
+    )
+    p_ratings.add_layout(labels_ratings)
+    
+    # Customize the ratings plot
+    p_ratings.xaxis.major_label_orientation = 45
+    p_ratings.xgrid.grid_line_color = None
+    p_ratings.y_range.start = 0
+    p_ratings.yaxis.formatter = NumeralTickFormatter(format="0.00")
+    p_ratings.yaxis.axis_label = "Average Rating"
+    p_ratings.title.text_font_size = '14pt'
+    
+    # Stack the plots vertically
+    layout = row(p_sales, p_ratings)
+    
+    return layout

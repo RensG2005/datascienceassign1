@@ -7,7 +7,7 @@ import panel as pn
 from bokeh.models import Div, Tabs, TabPanel,GlobalImportedStyleSheet
 from bokeh.themes import Theme
 from question3 import question3_plot1, question3_plot2
-from question4 import question4_plot1, question4_plot2
+from question4 import question4_plot1, question4_plot2, question4_plot3
 from question12 import question1_1, question2_1, question2_2
 import builtins
 builtins.get_ipython = lambda: None  # Prevents errors in certain Jupyter environments
@@ -22,7 +22,8 @@ plots = [
     question3_plot1(),
     question3_plot2(),
     question4_plot1(),
-    question4_plot2()
+    question4_plot2(),
+    question4_plot3()
 ]
 
 # Dashboard Title
@@ -37,8 +38,10 @@ bottom_row = row(plots[2], plots[3])
 row1 = column(top_row, bottom_row)
 # row1 = column(top_row, plots[2])
 row2 = row(*plots[4:6])
-row3 = row(*plots[6:8], width=750, height=500)
 
+row31 = row(*plots[6:8], width=750, height=500)
+row32 = row(plots[8], width=750, height=500)
+row3 = column(row31, row32)
 # Tabs
 tabs = Tabs(tabs=[
     TabPanel(child=row1, title="Sales"),
