@@ -14,8 +14,6 @@ from bokeh.models import ColumnDataSource, GeoJSONDataSource, LogColorMapper, Li
 from bokeh.palettes import brewer
 from bokeh.plotting import figure
 from bokeh.layouts import row
-
-
 import pycountry
 
 def question4_plot1():
@@ -169,9 +167,9 @@ def question4_plot3():
     country_sales = country_sales[country_sales["total_sales"] > 0]
     country_ratings = country_ratings[country_ratings["avg_rating"] > 0]
     
-    top_sales = country_sales.nlargest(5, "total_sales")
+    top_sales = country_sales.nlargest(12, "total_sales")
     
-    bottom_ratings = country_ratings.nsmallest(5, "avg_rating")
+    bottom_ratings = country_ratings.nsmallest(12, "avg_rating")
     
     top_sales['category'] = 'Top 5 Sales'
     top_sales['color'] = '#4682B4'
@@ -182,14 +180,14 @@ def question4_plot3():
     
     sales_source = ColumnDataSource(data=dict(
         countries=list(top_sales['country_name']),
-        sales=top_sales['total_sales'],
+        sales=top_sales['total_sales'].round(1),
         category=top_sales['category'],
         color=top_sales['color']
     ))
     
     ratings_source = ColumnDataSource(data=dict(
         countries=list(bottom_ratings['country_name']),
-        ratings=bottom_ratings['avg_rating'],
+        ratings=bottom_ratings['avg_rating'].round(1),
         category=bottom_ratings['category'],
         color=bottom_ratings['color']
     ))
