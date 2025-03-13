@@ -8,21 +8,21 @@ import pandas as pd
 
 import geopandas as gpd
 import json
-import matplotlib as mpl
-import pylab as plt
 
-from bokeh.io import show, output_notebook
-from bokeh.models import ColumnDataSource, GeoJSONDataSource, LogColorMapper, LinearColorMapper, ColorBar, HoverTool, LabelSet
+from bokeh.io import output_notebook
+from bokeh.models import ColumnDataSource, GeoJSONDataSource, LogColorMapper, LinearColorMapper, ColorBar, HoverTool, LabelSet,  NumeralTickFormatter,HoverTool
 from bokeh.palettes import brewer
-from bokeh.plotting import figure, show
-
-import panel as pn
-import panel.widgets as pnw
+from bokeh.plotting import figure
+from bokeh.layouts import row
 
 import pycountry
 
-
-# In[4]:
+def get_country_name(iso2_code):
+        try:
+            country = pycountry.countries.get(alpha_2=iso2_code)
+            return country.name if country else iso2_code
+        except AttributeError:
+            return iso2_code
 
 def question4_plot1():
     sales_csv = pd.read_csv(f"./sales_df.csv")
@@ -30,26 +30,17 @@ def question4_plot1():
     countrydf = salesdf.groupby("buyer country")["amount (merchant currency)"].sum().reset_index()
     countrydf.columns = ["country", "total_sales"]
 
-    def get_iso3_code(iso2_code):
-        try:
-            country = pycountry.countries.get(alpha_2=iso2_code)
-            return country.alpha_3 if country else iso2_code
-        except AttributeError:
-            return iso2_code
-
-    countrydf["country_code"] = countrydf["country"].apply(get_iso3_code)
+    countrydf["country_code"] = countrydf["country"].apply(get_country_name)
     countrydf = countrydf[["country_code", "total_sales"]]
 
-    # Load the shapefile
     shapefile = './countriesshapes/ne_110m_admin_0_countries.shp'
     gdf = gpd.read_file(shapefile)[['ADMIN', 'ADM0_A3', 'geometry']]
     gdf.columns = ['country_name', 'country_code', 'geometry']
     gdf = gdf.drop(gdf.index[159])
 
-    # Merge with country sales data
     key = "total_sales"
     merged = gdf.merge(countrydf, left_on="country_code", right_on="country_code", how="left")
-    merged[key] = merged[key].fillna(0)  # Fill NaN with 0
+    merged[key] = merged[key].fillna(0)
 
     def get_geodatasource(gdf):
         json_data = json.dumps(json.loads(gdf.to_json()))
@@ -63,7 +54,7 @@ def question4_plot1():
             raise ValueError(f"Column '{column}' not found in the GeoDataFrame")
         
         vals = gdf[column]
-        low_val = 0.1 if vals.min() == 0 else vals.min()  # Avoid log(0), use 0.1 as base for zeros
+        low_val = 0.1 if vals.min() == 0 else vals.min()
         color_mapper = LogColorMapper(palette=palette, low=low_val, high=vals.max())
         color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8, width=500, height=20,
                             location=(0,0), orientation='horizontal', title="Total Sales (log scale)")
@@ -87,34 +78,23 @@ def question4_plot1():
     p.yaxis.visible = False
     return p
 
-
-# In[ ]:
-
 def question4_plot2():
     rating_csv = pd.read_csv(f"./statscountrydf.csv")
     rating_df = pd.DataFrame(rating_csv)
     countrydf = rating_df.groupby("country")["total average rating"].mean().reset_index()
     countrydf.columns = ["country", "avg_rating"]
 
-    # Convert two-letter country codes to three-letter ISO A3 codes
-    def get_iso3_code(iso2_code):
-        try:
-            country = pycountry.countries.get(alpha_2=iso2_code)
-            return country.alpha_3 if country else iso2_code
-        except AttributeError:
-            return iso2_code
-
-    countrydf["country_code"] = countrydf["country"].apply(get_iso3_code)
+    countrydf["country_code"] = countrydf["country"].apply(get_country_name)
     countrydf = countrydf[["country_code", "avg_rating"]]
 
     shapefile = './countriesshapes/ne_110m_admin_0_countries.shp'
     gdf = gpd.read_file(shapefile)[['ADMIN', 'ADM0_A3', 'geometry']]
     gdf.columns = ['country_name', 'country_code', 'geometry']
-    gdf = gdf.drop(gdf.index[159])  # Assuming this is still needed
+    gdf = gdf.drop(gdf.index[159])
 
     key = "avg_rating"
     merged = gdf.merge(countrydf, left_on="country_code", right_on="country_code", how="left")
-    merged[key] = merged[key].fillna(0)  # Fill NaN with 0 for countries with no ratings
+    merged[key] = merged[key].fillna(0)
 
     def get_geodatasource(gdf):
         json_data = json.dumps(json.loads(gdf.to_json()))
@@ -129,7 +109,7 @@ def question4_plot2():
         
         vals = gdf[column]
         
-        low_val = 0.1 if vals.min() == 0 else vals.min()  # Avoid log(0), use 0.1 as base for zeros
+        low_val = 0.1 if vals.min() == 0 else vals.min()
         color_mapper = LinearColorMapper(palette=palette, low=low_val, high=vals.max())
         color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8, width=500, height=20,
                             location=(0,0), orientation='horizontal', title="Average Rating")
@@ -150,33 +130,17 @@ def question4_plot2():
         
         p.add_layout(color_bar, 'below')
         return p
-
-    # Create and display the map
-    output_notebook()  # If in a Jupyter notebook
     p = bokeh_plot_map(merged, column=key)
     return p
 def question4_plot3():
-    # Load the sales data
     sales_csv = pd.read_csv("./sales_df.csv")
     salesdf = pd.DataFrame(sales_csv)
-    
-    # Group by country and sum sales
     country_sales = salesdf.groupby("buyer country")["amount (merchant currency)"].sum().reset_index()
     country_sales.columns = ["country", "total_sales"]
-    
-    # Load the ratings data
     rating_csv = pd.read_csv("./statscountrydf.csv")
     rating_df = pd.DataFrame(rating_csv)
     country_ratings = rating_df.groupby("country")["total average rating"].mean().reset_index()
     country_ratings.columns = ["country", "avg_rating"]
-    
-    # Convert two-letter country codes to country names using pycountry
-    def get_country_name(iso2_code):
-        try:
-            country = pycountry.countries.get(alpha_2=iso2_code)
-            return country.name if country else iso2_code
-        except AttributeError:
-            return iso2_code
     
     country_sales["country_name"] = country_sales["country"].apply(get_country_name)
     country_ratings["country_name"] = country_ratings["country"].apply(get_country_name)
@@ -188,19 +152,13 @@ def question4_plot3():
     
     bottom_ratings = country_ratings.nsmallest(5, "avg_rating")
     
-    # Add category and color information
     top_sales['category'] = 'Top 5 Sales'
-    top_sales['color'] = '#4682B4'  # Blue for top sales
+    top_sales['color'] = '#4682B4'
     
     bottom_ratings['category'] = 'Bottom 5 Ratings'
-    bottom_ratings['color'] = '#FFA500'  # Red for bottom ratings
+    bottom_ratings['color'] = '#FFA500'    
+
     
-    # Create Bokeh data sources
-    from bokeh.models import ColumnDataSource, NumeralTickFormatter, LabelSet, Legend, LegendItem, HoverTool
-    from bokeh.plotting import figure
-    from bokeh.layouts import row
-    
-    # Create ColumnDataSource for sales
     sales_source = ColumnDataSource(data=dict(
         countries=list(top_sales['country_name']),
         sales=top_sales['total_sales'],
@@ -208,15 +166,12 @@ def question4_plot3():
         color=top_sales['color']
     ))
     
-    # Create ColumnDataSource for ratings
     ratings_source = ColumnDataSource(data=dict(
         countries=list(bottom_ratings['country_name']),
         ratings=bottom_ratings['avg_rating'],
         category=bottom_ratings['category'],
         color=bottom_ratings['color']
     ))
-    
-    # Create the sales plot - showing only top sales
     p_sales = figure(
         width=850,
         height=500,
@@ -226,14 +181,12 @@ def question4_plot3():
         tools="hover"
     )
     
-    # Add hover tooltip
     hover_sales = p_sales.select(dict(type=HoverTool))
     hover_sales.tooltips = [
         ("Country", "@countries"),
         ("Sales", "@sales{0,0}")
     ]
     
-    # Add bars using the color from the source
     bars_sales = p_sales.vbar(
         x='countries',
         top='sales',
@@ -243,7 +196,6 @@ def question4_plot3():
         fill_color='color'
     )
     
-    # Add value labels
     labels_sales = LabelSet(
         x='countries',
         y='sales',
@@ -258,7 +210,6 @@ def question4_plot3():
     )
     p_sales.add_layout(labels_sales)
     
-    # Customize the sales plot
     p_sales.xaxis.major_label_orientation = 45
     p_sales.xgrid.grid_line_color = None
     p_sales.y_range.start = 0
@@ -275,14 +226,12 @@ def question4_plot3():
         tools="hover"
     )
     
-    # Add hover tooltip
     hover_ratings = p_ratings.select(dict(type=HoverTool))
     hover_ratings.tooltips = [
         ("Country", "@countries"),
         ("Rating", "@ratings{0.00}")
     ]
     
-    # Add bars using the color from the source
     bars_ratings = p_ratings.vbar(
         x='countries',
         top='ratings',
@@ -292,7 +241,6 @@ def question4_plot3():
         fill_color='color'
     )
     
-    # Add value labels
     labels_ratings = LabelSet(
         x='countries',
         y='ratings',
@@ -306,16 +254,11 @@ def question4_plot3():
         y_offset=5,
     )
     p_ratings.add_layout(labels_ratings)
-    
-    # Customize the ratings plot
     p_ratings.xaxis.major_label_orientation = 45
     p_ratings.xgrid.grid_line_color = None
     p_ratings.y_range.start = 0
     p_ratings.yaxis.formatter = NumeralTickFormatter(format="0.00")
     p_ratings.yaxis.axis_label = "Average Rating"
-    p_ratings.title.text_font_size = '14pt'
-    
-    # Stack the plots vertically
     layout = row(p_sales, p_ratings)
     
     return layout
