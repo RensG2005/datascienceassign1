@@ -33,9 +33,9 @@ def question4_plot1():
     countrydf["country_code"] = countrydf["country"].apply(get_country_name)
     countrydf = countrydf[["country_code", "total_sales"]]
 
-    shapefile = './countriesshapes/ne_110m_admin_0_countries.shp'
-    gdf = gpd.read_file(shapefile)[['ADMIN', 'ADM0_A3', 'geometry']]
-    gdf.columns = ['country_name', 'country_code', 'geometry']
+    shapefile = "./countriesshapes/ne_110m_admin_0_countries.shp"
+    gdf = gpd.read_file(shapefile)[["ADMIN", "ADM0_A3", "geometry"]]
+    gdf.columns = ["country_name", "country_code", "geometry"]
     gdf = gdf.drop(gdf.index[159])
 
     key = "total_sales"
@@ -46,30 +46,27 @@ def question4_plot1():
         json_data = json.dumps(json.loads(gdf.to_json()))
         return GeoJSONDataSource(geojson=json_data)
 
-    def bokeh_plot_map(gdf, column, title=''):
+    def bokeh_plot_map(gdf, column, title=""):
         geosource = get_geodatasource(gdf)
-        palette = brewer['Blues'][9][::-1]
-        
-        if column not in gdf.columns:
-            raise ValueError(f"Column '{column}' not found in the GeoDataFrame")
+        palette = brewer["Blues"][9][::-1]
         
         vals = gdf[column]
         low_val = 0.1 if vals.min() == 0 else vals.min()
         color_mapper = LogColorMapper(palette=palette, low=low_val, high=vals.max())
         color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8, width=500, height=20,
-                            location=(0,0), orientation='horizontal', title="Total Sales (log scale)")
+                            location=(0,0), orientation="horizontal", title="Total Sales (log scale)")
         
         p = figure(title=title, height=400, width=850, tools="hover")
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         
-        patches = p.patches('xs', 'ys', source=geosource, fill_alpha=1, line_width=0.5, line_color='black',  
-                            fill_color={'field': column, 'transform': color_mapper})
+        patches = p.patches("xs", "ys", source=geosource, fill_alpha=1, line_width=0.5, line_color="black",  
+                            fill_color={"field": column, "transform": color_mapper})
         
         hover = p.select_one(HoverTool)
         hover.tooltips = [("Country", "@country_name"), ("Sales", f"@{column}")]
         
-        p.add_layout(color_bar, 'below')
+        p.add_layout(color_bar, "below")
         return p
 
     output_notebook()
@@ -87,9 +84,9 @@ def question4_plot2():
     countrydf["country_code"] = countrydf["country"].apply(get_country_name)
     countrydf = countrydf[["country_code", "avg_rating"]]
 
-    shapefile = './countriesshapes/ne_110m_admin_0_countries.shp'
-    gdf = gpd.read_file(shapefile)[['ADMIN', 'ADM0_A3', 'geometry']]
-    gdf.columns = ['country_name', 'country_code', 'geometry']
+    shapefile = "./countriesshapes/ne_110m_admin_0_countries.shp"
+    gdf = gpd.read_file(shapefile)[["ADMIN", "ADM0_A3", "geometry"]]
+    gdf.columns = ["country_name", "country_code", "geometry"]
     gdf = gdf.drop(gdf.index[159])
 
     key = "avg_rating"
@@ -100,35 +97,31 @@ def question4_plot2():
         json_data = json.dumps(json.loads(gdf.to_json()))
         return GeoJSONDataSource(geojson=json_data)
 
-    def bokeh_plot_map(gdf, column, title=''):
+    def bokeh_plot_map(gdf, column, title=""):
         geosource = get_geodatasource(gdf)
-        palette = brewer['Blues'][9][::-1]
-        
-        if column not in gdf.columns:
-            raise ValueError(f"Column '{column}' not found in the GeoDataFrame")
-        
+        palette = brewer["Blues"][9][::-1]
         vals = gdf[column]
         
         low_val = 0.1 if vals.min() == 0 else vals.min()
         color_mapper = LinearColorMapper(palette=palette, low=low_val, high=vals.max())
         color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8, width=500, height=20,
-                            location=(0,0), orientation='horizontal', title="Average Rating")
+                            location=(0,0), orientation="horizontal", title="Average Rating")
         
-        p = figure(title=title, height=400, width=850, tools='hover')
+        p = figure(title=title, height=400, width=850, tools="hover")
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         
         p.xaxis.visible = False
         p.yaxis.visible = False
         
-        patches = p.patches('xs', 'ys', source=geosource, fill_alpha=1, line_width=0.5, line_color='black',  
-                            fill_color={'field': column, 'transform': color_mapper})
+        patches = p.patches("xs", "ys", source=geosource, fill_alpha=1, line_width=0.5, line_color="black",  
+                            fill_color={"field": column, "transform": color_mapper})
         
         
         hover = p.select_one(HoverTool)
         hover.tooltips = [("Country", "@country_name"), ("Avg Rating", f"@{column}")]
         
-        p.add_layout(color_bar, 'below')
+        p.add_layout(color_bar, "below")
         return p
     p = bokeh_plot_map(merged, column=key)
     return p
@@ -152,31 +145,31 @@ def question4_plot3():
     
     bottom_ratings = country_ratings.nsmallest(5, "avg_rating")
     
-    top_sales['category'] = 'Top 5 Sales'
-    top_sales['color'] = '#4682B4'
+    top_sales["category"] = "Top 5 Sales"
+    top_sales["color"] = "#4682B4"
     
-    bottom_ratings['category'] = 'Bottom 5 Ratings'
-    bottom_ratings['color'] = '#FFA500'    
+    bottom_ratings["category"] = "Bottom 5 Ratings"
+    bottom_ratings["color"] = "#FFA500"    
 
     
     sales_source = ColumnDataSource(data=dict(
-        countries=list(top_sales['country_name']),
-        sales=top_sales['total_sales'],
-        category=top_sales['category'],
-        color=top_sales['color']
+        countries=list(top_sales["country_name"]),
+        sales=top_sales["total_sales"],
+        category=top_sales["category"],
+        color=top_sales["color"]
     ))
     
     ratings_source = ColumnDataSource(data=dict(
-        countries=list(bottom_ratings['country_name']),
-        ratings=bottom_ratings['avg_rating'],
-        category=bottom_ratings['category'],
-        color=bottom_ratings['color']
+        countries=list(bottom_ratings["country_name"]),
+        ratings=bottom_ratings["avg_rating"],
+        category=bottom_ratings["category"],
+        color=bottom_ratings["color"]
     ))
     p_sales = figure(
         width=850,
         height=500,
         title="Top 5 Countries by Sales",
-        x_range=sales_source.data['countries'],
+        x_range=sales_source.data["countries"],
         toolbar_location=None,
         tools="hover"
     )
@@ -188,22 +181,22 @@ def question4_plot3():
     ]
     
     bars_sales = p_sales.vbar(
-        x='countries',
-        top='sales',
+        x="countries",
+        top="sales",
         width=0.7,
         source=sales_source,
         line_color=None,
-        fill_color='color'
+        fill_color="color"
     )
     
     labels_sales = LabelSet(
-        x='countries',
-        y='sales',
-        text='sales',
-        text_font_size='9pt',
-        text_color='black',
-        text_align='center',
-        text_baseline='bottom',
+        x="countries",
+        y="sales",
+        text="sales",
+        text_font_size="9pt",
+        text_color="black",
+        text_align="center",
+        text_baseline="bottom",
         source=sales_source,
         x_offset=0,
         y_offset=5,
@@ -215,13 +208,13 @@ def question4_plot3():
     p_sales.y_range.start = 0
     p_sales.yaxis.formatter = NumeralTickFormatter(format="0,0")
     p_sales.yaxis.axis_label = "Total Sales"
-    p_sales.title.text_font_size = '14pt'
+    p_sales.title.text_font_size = "14pt"
     
     p_ratings = figure(
         width=850,
         height=500,
         title="Bottom 5 Countries by Average Rating",
-        x_range=ratings_source.data['countries'],
+        x_range=ratings_source.data["countries"],
         toolbar_location=None,
         tools="hover"
     )
@@ -233,22 +226,22 @@ def question4_plot3():
     ]
     
     bars_ratings = p_ratings.vbar(
-        x='countries',
-        top='ratings',
+        x="countries",
+        top="ratings",
         width=0.7,
         source=ratings_source,
         line_color=None,
-        fill_color='color'
+        fill_color="color"
     )
     
     labels_ratings = LabelSet(
-        x='countries',
-        y='ratings',
-        text='ratings',
-        text_font_size='9pt',
-        text_color='black',
-        text_align='center',
-        text_baseline='bottom',
+        x="countries",
+        y="ratings",
+        text="ratings",
+        text_font_size="9pt",
+        text_color="black",
+        text_align="center",
+        text_baseline="bottom",
         source=ratings_source,
         x_offset=0,
         y_offset=5,
